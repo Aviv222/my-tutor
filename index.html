@@ -3,214 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoStep - ללמוד שפה בצעדים קטנים</title>
+    <title>LingoStep - למידה בשלבים</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .duo-green { background-color: #58cc02; }
         .duo-blue { background-color: #1cb0f6; }
-        .chat-bubble { border-radius: 15px; border-width: 2px; border-bottom-width: 4px; }
+        /* אנימציות מעבר חלקות בין השלבים */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col font-sans text-right" dir="rtl">
+<body class="bg-white h-screen flex flex-col font-sans text-right" dir="rtl">
 
-    <header class="p-4 border-b-2 border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10 shadow-sm">
-        <div class="flex items-center gap-2">
-            <span class="text-2xl">🦉</span>
-            <h1 class="font-bold text-xl text-green-500">LingoStep</h1>
+    <header class="p-4 flex flex-col gap-2 items-center bg-white sticky top-0 z-10 w-full max-w-2xl mx-auto mt-4">
+        <div class="flex justify-between w-full items-center">
+            <button onclick="resetProgress()" class="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors">🗑️ איפוס הכל</button>
+            <span id="levelIndicator" class="text-sm font-bold text-gray-400">שלב 1/3</span>
+            <span id="xpCount" class="text-sm font-bold text-orange-400">0 XP ⚡</span>
         </div>
-        <div class="flex flex-col items-end flex-1 px-4">
-            <div class="w-full max-w-xs bg-gray-200 rounded-full h-3">
-                <div id="progressBar" class="duo-green h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-            <span id="xpCount" class="text-xs font-bold text-gray-500 mt-1 uppercase">0 XP</span>
+        
+        <div class="w-full bg-gray-200 rounded-full h-4">
+            <div id="progressBar" class="duo-green h-4 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col p-4 max-w-2xl mx-auto w-full">
-        <div id="instruction" class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 mb-6 text-blue-800 font-bold text-center text-lg shadow-sm transition-all">
+    <main class="flex-1 flex flex-col justify-center items-center p-6 max-w-2xl mx-auto w-full fade-in" id="mainContainer">
+        
+        <h2 id="questionText" class="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-8">
             טוען משימה...
-        </div>
+        </h2>
 
-        <div id="chatWindow" class="flex-1 overflow-y-auto space-y-6 pb-4">
+        <div id="interactiveArea" class="w-full max-w-md">
             </div>
 
-        <div id="interactiveArea" class="mt-2 p-4 border-t-2 border-gray-200 bg-white rounded-t-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            </div>
     </main>
 
+    <footer id="feedbackFooter" class="fixed bottom-0 left-0 w-full p-6 duo-green text-white hidden transform transition-transform translate-y-full">
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <div class="flex flex-col gap-1">
+                <h3 class="font-bold text-2xl">מצוין!</h3>
+                <p id="tutorMessage" class="text-sm md:text-base opacity-90">הסבר המורה יופיע כאן</p>
+            </div>
+            <button onclick="advanceLesson()" class="bg-white text-[#58cc02] font-bold px-8 py-3 rounded-xl shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none text-lg">
+                המשך
+            </button>
+        </div>
+    </footer>
+
     <script>
-        let currentStep = 0;
-        let xp = 0;
-        
-        // מערך השיעורים שלנו - משלב גם הקלדה וגם כפתורים עם תמונות!
+        // --- זיכרון (localStorage) ---
+        let currentStep = parseInt(localStorage.getItem('lingoStep_step_clean')) || 0;
+        let xp = parseInt(localStorage.getItem('lingoStep_xp_clean')) || 0;
+
+        // --- המשימות ---
         const lessons = [
             { 
                 type: 'text', 
-                quest: 'תגידי "שלום" בספרדית (¡Hola!)', 
+                quest: 'איך אומרים "שלום" בספרדית?', 
                 target: 'hola', 
-                tutor: '¡Hola! ¿Cómo estás? (שלום! מה שלומך?)', 
-                trans: 'שלום! מה שלומך?' 
+                tutor: '¡Hola! (אוֹלָה) - ה-H שותקת בספרדית.' 
             },
             { 
                 type: 'choice', 
                 quest: 'איך אומרים "כלב"?', 
-                target: 'perro',
+                target: 'perro', 
                 options: [
-                    { id: 'gato', icon: '🐱', label: 'Gato' },
-                    { id: 'perro', icon: '🐶', label: 'Perro' },
+                    { id: 'gato', icon: '🐱', label: 'Gato' }, 
+                    { id: 'perro', icon: '🐶', label: 'Perro' }, 
                     { id: 'pajaro', icon: '🐦', label: 'Pájaro' }
-                ],
-                tutor: '¡Muy bien! El perro. (יפה מאוד! הכלב.)', 
-                trans: 'יפה מאוד! הכלב.' 
+                ], 
+                tutor: 'El perro (הכלב). גלגלי את ה-R!' 
             },
             { 
-                type: 'text', 
-                quest: 'תעני "כן" (Sí)', 
-                target: 'si', 
-                tutor: '¡Excelente! Terminaste la lección. (מצוין! סיימת את השיעור.)', 
-                trans: 'מצוין! סיימת את השיעור.' 
+                type: 'choice', 
+                quest: 'איך אומרים "חתול"?', 
+                target: 'gato', 
+                options: [
+                    { id: 'gato', icon: '🐱', label: 'Gato' }, 
+                    { id: 'pez', icon: '🐟', label: 'Pez' }, 
+                    { id: 'vaca', icon: '🐄', label: 'Vaca' }
+                ], 
+                tutor: 'El gato (החתול). פשוט וקל.' 
             }
         ];
 
-        // פונקציה שמאתחלת את השיעור הנוכחי
+        // --- פונקציות שמירה ---
+        function saveData() {
+            localStorage.setItem('lingoStep_step_clean', currentStep);
+            localStorage.setItem('lingoStep_xp_clean', xp);
+        }
+
+        function resetProgress() {
+            if(confirm("בטוחה שאת רוצה למחוק הכל ולהתחיל מהתחלה?")) {
+                localStorage.removeItem('lingoStep_step_clean');
+                localStorage.removeItem('lingoStep_xp_clean');
+                location.reload();
+            }
+        }
+
+        // --- טעינת המסך ---
         function renderLesson() {
+            // הסתרת בר הפידבק הירוק מתחתית המסך אם הוא פתוח
+            document.getElementById('feedbackFooter').classList.add('hidden', 'translate-y-full');
+            
+            // אפקט אנימציה של כניסה
+            const container = document.getElementById('mainContainer');
+            container.classList.remove('fade-in');
+            void container.offsetWidth; // טריק לאיפוס האנימציה
+            container.classList.add('fade-in');
+
+            // בדיקה אם סיימנו הכל
             if (currentStep >= lessons.length) {
-                document.getElementById('instruction').innerText = "כל הכבוד! סיימת את השיעור הראשון! 🎉";
+                document.getElementById('questionText').innerText = "כל הכבוד! סיימת את כל השלבים! 🎉";
                 document.getElementById('interactiveArea').innerHTML = `
-                    <button onclick="location.reload()" class="w-full duo-green text-white font-bold px-8 py-4 rounded-xl shadow-[0_4px_0_#46a302] active:translate-y-1 active:shadow-none text-lg">
-                        התחילי שיעור מחדש
+                    <button onclick="resetProgress()" class="w-full text-gray-500 font-bold py-4 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-colors">
+                        התחילי מהתחלה
                     </button>
                 `;
                 return;
             }
 
             const lesson = lessons[currentStep];
-            document.getElementById('instruction').innerText = `משימה: ${lesson.quest}`;
+            
+            // הצגת השאלה הניקייה
+            document.getElementById('questionText').innerText = lesson.quest;
             
             const area = document.getElementById('interactiveArea');
             
-            // אם זה שיעור הקלדה
             if (lesson.type === 'text') {
                 area.innerHTML = `
-                    <div class="flex gap-2 items-center">
-                        <input type="text" id="userInput" placeholder="הקלידי כאן (באנגלית/ספרדית)..." onkeydown="handleEnter(event)"
-                            class="flex-1 p-3 border-2 border-gray-200 rounded-xl focus:border-blue-400 outline-none text-left" dir="ltr">
-                        <button onclick="checkTextAnswer()" class="duo-blue text-white font-bold px-8 py-3 rounded-xl shadow-[0_4px_0_#1899d6] active:translate-y-1 active:shadow-none transition-all">
+                    <div class="flex flex-col gap-4">
+                        <input type="text" id="userInput" placeholder="הקלידי כאן (למשל: hola)..." onkeydown="if(event.key==='Enter')checkTextAnswer()" 
+                            class="w-full p-4 text-xl border-2 border-gray-300 rounded-xl focus:border-[#1cb0f6] focus:bg-blue-50 outline-none text-center" dir="ltr">
+                        <button onclick="checkTextAnswer()" class="w-full duo-blue text-white font-bold px-8 py-4 rounded-xl shadow-[0_4px_0_#1899d6] active:translate-y-1 active:shadow-none text-lg transition-all">
                             בדיקה
                         </button>
                     </div>
                 `;
                 setTimeout(() => document.getElementById('userInput').focus(), 100);
             } 
-            // אם זה שיעור בחירה עם תמונות
             else if (lesson.type === 'choice') {
-                let buttonsHTML = lesson.options.map(opt => `
-                    <button onclick="checkChoiceAnswer('${opt.id}', '${opt.icon} ${opt.label}')" 
-                        class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-400 active:bg-blue-100 transition-all shadow-sm">
-                        <span class="text-5xl mb-3">${opt.icon}</span>
-                        <span class="font-bold text-gray-700 text-lg">${opt.label}</span>
-                    </button>
-                `).join('');
-                
                 area.innerHTML = `
-                    <div class="grid grid-cols-3 gap-3">
-                        ${buttonsHTML}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        ${lesson.options.map(opt => `
+                            <button onclick="checkChoiceAnswer('${opt.id}')" 
+                                class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-2xl hover:bg-blue-50 hover:border-[#1cb0f6] active:bg-blue-100 transition-all shadow-sm">
+                                <span class="text-6xl mb-4">${opt.icon}</span>
+                                <span class="font-bold text-gray-700 text-xl">${opt.label}</span>
+                            </button>
+                        `).join('')}
                     </div>
                 `;
             }
             updateUI();
         }
 
-        // זיהוי לחיצה על מקש אנטר
-        function handleEnter(event) {
-            if (event.key === 'Enter') {
-                checkTextAnswer();
-            }
-        }
-
-        // בדיקת תשובת טקסט
+        // --- בדיקת תשובות ---
         function checkTextAnswer() {
             const input = document.getElementById('userInput');
-            const text = input.value.toLowerCase().trim();
-            if(!text) return;
+            const answer = input.value.toLowerCase().trim();
+            
+            if (!answer) return;
 
-            if (text.includes(lessons[currentStep].target)) {
-                addMessage(input.value, 'user');
-                input.value = '';
-                advanceLesson();
+            if (answer.includes(lessons[currentStep].target)) {
+                showSuccess();
             } else {
-                alert("לא בדיוק... נסי שוב! (טיפ: חפשי את המילה בסוגריים למעלה)");
+                alert("אופס! נסי שוב.");
+                input.value = '';
                 input.focus();
             }
         }
 
-        // בדיקת תשובת כפתור
-        function checkChoiceAnswer(selectedId, labelText) {
-            if (selectedId === lessons[currentStep].target) {
-                addMessage(labelText, 'user');
-                advanceLesson();
+        function checkChoiceAnswer(id) {
+            if (id === lessons[currentStep].target) {
+                showSuccess();
             } else {
-                alert("אופס! זו לא התשובה הנכונה. נסי כפתור אחר.");
+                alert("לא בדיוק... נסי תמונה אחרת!");
             }
         }
 
-        // התקדמות לשלב הבא
-        function advanceLesson() {
+        // --- הצגת הפופ-אפ הירוק של ההצלחה ---
+        function showSuccess() {
+            const footer = document.getElementById('feedbackFooter');
+            const tutorMsg = document.getElementById('tutorMessage');
+            
+            tutorMsg.innerText = lessons[currentStep].tutor;
+            
+            footer.classList.remove('hidden', 'translate-y-full');
+            
+            // מוסיף קצת XP מיד
             xp += 15;
-            const currentTutorMsg = lessons[currentStep].tutor;
-            const currentTransMsg = lessons[currentStep].trans;
-            
+            document.getElementById('xpCount').innerText = `${xp} XP ⚡`;
+        }
+
+        // --- מעבר לשלב הבא ---
+        function advanceLesson() {
             currentStep++;
+            saveData();
             updateUI();
-            
-            // תגובת המורה
-            setTimeout(() => {
-                addTutorMessage(currentTutorMsg, currentTransMsg);
-                setTimeout(() => {
-                    renderLesson();
-                }, 1000);
-            }, 600);
+            renderLesson();
         }
 
-        function addMessage(text, sender) {
-            const div = document.createElement('div');
-            div.className = "chat-bubble duo-blue text-white p-3 max-w-[80%] mr-auto text-left font-bold text-lg shadow-sm";
-            div.dir = "ltr";
-            div.innerText = text;
-            document.getElementById('chatWindow').appendChild(div);
-            scroll();
-        }
-
-        function addTutorMessage(text, translation) {
-            const container = document.createElement('div');
-            container.className = "flex flex-col items-start gap-1 mb-4";
-            container.innerHTML = `
-                <div class="flex items-end gap-2">
-                    <span class="text-3xl">🦉</span>
-                    <div class="chat-bubble border-gray-200 bg-white p-4 max-w-[100%] text-left shadow-sm" dir="ltr">${text}</div>
-                </div>
-                <button onclick="toggleTranslation(this, '${translation}')" class="text-sm text-blue-500 font-bold mr-10 hover:underline">הצג תרגום 👁️</button>
-            `;
-            document.getElementById('chatWindow').appendChild(container);
-            scroll();
-        }
-
-        function toggleTranslation(btn, text) {
-            btn.innerText = (btn.innerText.includes('הצג')) ? `תרגום: ${text}` : 'הצג תרגום 👁️';
-        }
-
+        // --- עדכון טקסטים ובר למעלה ---
         function updateUI() {
-            document.getElementById('xpCount').innerText = `${xp} XP`;
+            document.getElementById('xpCount').innerText = `${xp} XP ⚡`;
+            
+            // עדכון השלב למעלה
+            const currentDisplayLevel = currentStep < lessons.length ? currentStep + 1 : lessons.length;
+            document.getElementById('levelIndicator').innerText = `שלב ${currentDisplayLevel}/${lessons.length}`;
+            
+            // עדכון הפס הירוק
             const percent = (currentStep / lessons.length) * 100;
             document.getElementById('progressBar').style.width = `${percent}%`;
         }
 
-        function scroll() {
-            const win = document.getElementById('chatWindow');
-            win.scrollTop = win.scrollHeight;
-        }
-
-        // התחלת השיעור כשהעמוד עולה
+        // התחלה
         window.onload = () => {
             renderLesson();
         };
