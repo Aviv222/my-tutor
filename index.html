@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LingoTutor Lite - Interactive Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chat-bubble-user { background: #4f46e5; color: white; border-radius: 18px 18px 2px 18px; }
+        .chat-bubble-tutor { background: #e5e7eb; color: #1f2937; border-radius: 18px 18px 18px 2px; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col font-sans">
+
+    <header class="p-4 bg-white border-b flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <h1 class="font-bold text-xl text-indigo-600">LingoTutor</h1>
+            <select id="langSelect" class="border rounded-lg px-2 py-1 text-sm bg-slate-50">
+                <option value="Spanish">Spanish 🇪🇸</option>
+                <option value="French">French 🇫🇷</option>
+                <option value="German">German 🇩🇪</option>
+                <option value="Japanese">Japanese 🇯🇵</option>
+            </select>
+        </div>
+        <div id="proficiency" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+            Level: A1 (Beginner)
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <main class="flex-1 flex flex-col p-4">
+            <div id="chatWindow" class="flex-1 overflow-y-auto space-y-4 p-2">
+                <div class="chat-bubble-tutor p-4 max-w-[80%]">
+                    ¡Hola! I am your Spanish tutor. Let's practice! How are you today?
+                </div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <input type="text" id="userInput" placeholder="Type in your target language..." 
+                    class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
+                <button onclick="handleSend()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition">
+                    Send
+                </button>
+            </div>
+        </main>
+
+        <aside class="w-80 bg-white border-l p-6 hidden md:block overflow-y-auto">
+            <h2 class="font-bold text-gray-800 mb-4">Learning Insights</h2>
+            
+            <section class="mb-8">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Live Feedback</h3>
+                <div id="feedbackContainer" class="space-y-3 text-sm">
+                    <p class="italic text-gray-500 text-center py-4">Start chatting to see corrections.</p>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Active Goals</h3>
+                <div id="goalContainer" class="space-y-2">
+                    <div class="p-3 bg-green-50 rounded-lg text-sm text-green-800 border border-green-100">
+                        ✅ Master greetings
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border">
+                        🎯 Use 3 verbs in present tense
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chatWindow');
+        const feedbackContainer = document.getElementById('feedbackContainer');
+        const langSelect = document.getElementById('langSelect');
+
+        // Simple local "AI" logic for feedback
+        const feedbackRules = [
+            { trigger: 'como estas', correction: 'Try using the accent: "¿Cómo estás?"', type: 'grammar' },
+            { trigger: 'tengo 20 años', correction: 'Great use of "tener" for age!', type: 'praise' },
+            { trigger: 'yo soy bien', correction: 'For feelings/states, use "Estoy" instead of "Soy".', type: 'error' }
+        ];
+
+        function handleSend() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 1. Display User Message
+            addMessage(text, 'user');
+            input.value = '';
+
+            // 2. Process "Local Feedback"
+            analyzeText(text);
+
+            // 3. Simulate Tutor Response
+            setTimeout(() => {
+                const response = getMockResponse(text);
+                addMessage(response, 'tutor');
+            }, 800);
+        }
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = sender === 'user' ? 'chat-bubble-user p-3 max-w-[80%] ml-auto' : 'chat-bubble-tutor p-3 max-w-[80%]';
+            div.innerText = text;
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function analyzeText(text) {
+            const lowerText = text.toLowerCase();
+            let foundFeedback = false;
+
+            feedbackRules.forEach(rule => {
+                if (lowerText.includes(rule.trigger)) {
+                    showFeedback(rule.correction, rule.type);
+                    foundFeedback = true;
+                }
+            });
+
+            if (!foundFeedback) {
+                showFeedback("Good effort! Keep the conversation flowing.", "praise");
+            }
+        }
+
+        function showFeedback(msg, type) {
+            const color = type === 'error' ? 'border-red-400 bg-red-50 text-red-700' : 'border-blue-400 bg-blue-50 text-blue-700';
+            feedbackContainer.innerHTML = `
+                <div class="p-3 border-l-4 ${color} rounded animate-pulse">
+                    ${msg}
+                </div>
+            ` + feedbackContainer.innerHTML;
+        }
+
+        function getMockResponse(input) {
+            const lang = langSelect.value;
+            if (lang === 'Spanish') return "¡Qué bien! Entiendo perfectamente. ¿Qué más quieres practicar?";
+            return "That's interesting! Let's keep practicing.";
+        }
+    </script>
+</body>
+</html>
