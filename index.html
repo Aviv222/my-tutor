@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>!מתנה לאמא</title>
+    <title>מתנה!</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .duo-green { background-color: #58cc02; }
@@ -43,12 +43,10 @@
     </footer>
 
     <script>
-        // שיניתי את שם הזיכרון כדי שיתחיל לך קורס נקי מאפס
         let currentStep = parseInt(localStorage.getItem('lingo_mega_step')) || 0;
         let xp = parseInt(localStorage.getItem('lingo_mega_xp')) || 0;
 
         const lessons = [
-            // יחידה 1: ברכות ונימוסים
             { type: 'text', quest: 'איך אומרים "שלום"?', target: 'hola', tutor: '¡Hola! (ה-H שותקת)' },
             { type: 'text', quest: 'איך אומרים "תודה"?', target: 'gracias', tutor: '¡Gracias!' },
             { type: 'text', quest: 'איך אומרים "בבקשה"? (Por favor)', target: 'por favor', tutor: 'Por favor.' },
@@ -57,73 +55,55 @@
             { type: 'text', quest: 'איך אומרים "להתראות"? (Adiós)', target: 'adios', tutor: '¡Adiós!' },
             { type: 'text', quest: 'איך אומרים "בוקר טוב"? (Buenos días)', target: 'buenos dias', tutor: 'Buenos días.' },
             { type: 'text', quest: 'איך אומרים "לילה טוב"? (Buenas noches)', target: 'buenas noches', tutor: 'Buenas noches.' },
-
-            // יחידה 2: חיות
             { type: 'choice', quest: 'איך אומרים "כלב"?', target: 'perro', options: [{ id: 'gato', icon: '🐱', label: 'Gato' }, { id: 'perro', icon: '🐶', label: 'Perro' }, { id: 'pajaro', icon: '🐦', label: 'Pájaro' }], tutor: 'El perro.' },
             { type: 'choice', quest: 'איך אומרים "חתול"?', target: 'gato', options: [{ id: 'gato', icon: '🐱', label: 'Gato' }, { id: 'vaca', icon: '🐄', label: 'Vaca' }, { id: 'caballo', icon: '🐴', label: 'Caballo' }], tutor: 'El gato.' },
             { type: 'choice', quest: 'איך אומרים "פרה"?', target: 'vaca', options: [{ id: 'pez', icon: '🐟', label: 'Pez' }, { id: 'vaca', icon: '🐄', label: 'Vaca' }, { id: 'perro', icon: '🐶', label: 'Perro' }], tutor: 'La vaca.' },
-            { type: 'choice', quest: 'איך אומרים "סוס"?', target: 'caballo', options: [{ id: 'caballo', icon: '🐴', label: 'Caballo' }, { id: 'pajaro', icon: '🐦', label: 'Pájaro' }, { id: 'gato', icon: '🐱', label: 'Gato' }], tutor: 'El caballo (ה-LL נשמעת כמו י').' },
-
-            // יחידה 3: אנשים ומשפחה
+            { type: 'choice', quest: 'איך אומרים "סוס"?', target: 'caballo', options: [{ id: 'caballo', icon: '🐴', label: 'Caballo' }, { id: 'pajaro', icon: '🐦', label: 'Pájaro' }, { id: 'gato', icon: '🐱', label: 'Gato' }], tutor: "El caballo (ה-LL נשמעת כמו י)." },
             { type: 'choice', quest: 'איך אומרים "ילד"?', target: 'nino', options: [{ id: 'nino', icon: '👦', label: 'Niño' }, { id: 'nina', icon: '👧', label: 'Niña' }, { id: 'mujer', icon: '👩', label: 'Mujer' }], tutor: 'El niño.' },
             { type: 'choice', quest: 'איך אומרים "ילדה"?', target: 'nina', options: [{ id: 'hombre', icon: '👨', label: 'Hombre' }, { id: 'nina', icon: '👧', label: 'Niña' }, { id: 'nino', icon: '👦', label: 'Niño' }], tutor: 'La niña.' },
             { type: 'choice', quest: 'איך אומרים "אישה"?', target: 'mujer', options: [{ id: 'mujer', icon: '👩', label: 'Mujer' }, { id: 'hombre', icon: '👨', label: 'Hombre' }, { id: 'nino', icon: '👦', label: 'Niño' }], tutor: 'La mujer.' },
             { type: 'choice', quest: 'איך אומרים "גבר"?', target: 'hombre', options: [{ id: 'nina', icon: '👧', label: 'Niña' }, { id: 'mujer', icon: '👩', label: 'Mujer' }, { id: 'hombre', icon: '👨', label: 'Hombre' }], tutor: 'El hombre.' },
             { type: 'text', quest: 'איך אומרים "אמא"? (Madre)', target: 'madre', tutor: 'La madre.' },
             { type: 'text', quest: 'איך אומרים "אבא"? (Padre)', target: 'padre', tutor: 'El padre.' },
-
-            // יחידה 4: אוכל ושתייה
             { type: 'choice', quest: 'איך אומרים "מים"?', target: 'agua', options: [{ id: 'leche', icon: '🥛', label: 'Leche' }, { id: 'agua', icon: '💧', label: 'Agua' }, { id: 'cafe', icon: '☕', label: 'Café' }], tutor: 'El agua.' },
             { type: 'choice', quest: 'איך אומרים "לחם"?', target: 'pan', options: [{ id: 'pan', icon: '🍞', label: 'Pan' }, { id: 'queso', icon: '🧀', label: 'Queso' }, { id: 'carne', icon: '🥩', label: 'Carne' }], tutor: 'El pan.' },
             { type: 'choice', quest: 'איך אומרים "תפוח"?', target: 'manzana', options: [{ id: 'banana', icon: '🍌', label: 'Banana' }, { id: 'manzana', icon: '🍎', label: 'Manzana' }, { id: 'uva', icon: '🍇', label: 'Uva' }], tutor: 'La manzana.' },
             { type: 'choice', quest: 'איך אומרים "חלב"?', target: 'leche', options: [{ id: 'agua', icon: '💧', label: 'Agua' }, { id: 'leche', icon: '🥛', label: 'Leche' }, { id: 'cafe', icon: '☕', label: 'Café' }], tutor: 'La leche.' },
             { type: 'choice', quest: 'איך אומרים "קפה"?', target: 'cafe', options: [{ id: 'cafe', icon: '☕', label: 'Café' }, { id: 'te', icon: '🍵', label: 'Té' }, { id: 'agua', icon: '💧', label: 'Agua' }], tutor: 'El café.' },
-
-            // יחידה 5: פעלים - רצון
-            { type: 'text', quest: 'אני (Yo). איך אומרים "אני"?', target: 'yo', tutor: 'Yo (יו).' },
-            { type: 'text', quest: 'רוצה (Quiero). איך אומרים "רוצה"?', target: 'quiero', tutor: 'Quiero (קיארו).' },
+            { type: 'text', quest: 'אני (Yo). איך אומרים "אני"?', target: 'yo', tutor: 'Yo.' },
+            { type: 'text', quest: 'רוצה (Quiero). איך אומרים "רוצה"?', target: 'quiero', tutor: 'Quiero.' },
             { type: 'text', quest: 'איך אומרים "אני רוצה"?', target: 'yo quiero', tutor: 'Yo quiero.' },
             { type: 'text', quest: 'איך אומרים "אני רוצה מים"?', target: 'yo quiero agua', tutor: 'Yo quiero agua.' },
             { type: 'text', quest: 'איך אומרים "אני רוצה קפה"?', target: 'yo quiero cafe', tutor: 'Yo quiero café.' },
-
-            // יחידה 6: פעלים - אכילה ושתייה
             { type: 'text', quest: 'אוכל (Como). איך אומרים "אני אוכל"?', target: 'yo como', tutor: 'Yo como.' },
             { type: 'text', quest: 'איך אומרים "אני אוכל לחם"?', target: 'yo como pan', tutor: 'Yo como pan.' },
             { type: 'text', quest: 'איך אומרים "אני אוכל תפוח"?', target: 'yo como manzana', tutor: 'Yo como manzana.' },
             { type: 'text', quest: 'שותה (Bebo). איך אומרים "אני שותה"?', target: 'yo bebo', tutor: 'Yo bebo.' },
             { type: 'text', quest: 'איך אומרים "אני שותה חלב"?', target: 'yo bebo leche', tutor: 'Yo bebo leche.' },
-            { type: 'text', quest: 'שלב משולב: "אני אוכל לחם ושותה מים" (Y = ו)', target: 'yo como pan y bebo agua', tutor: 'Yo como pan y bebo agua. מעולה!' },
-
-            // יחידה 7: צבעים
-            { type: 'choice', quest: 'איך אומרים "אדום"?', target: 'rojo', options: [{ id: 'rojo', icon: '🔴', label: 'Rojo' }, { id: 'azul', icon: '🔵', label: 'Azul' }, { id: 'verde', icon: '🟢', label: 'Verde' }], tutor: 'Rojo (רוחו).' },
+            { type: 'text', quest: 'שלב משולב: "אני אוכל לחם ושותה מים"', target: 'yo como pan y bebo agua', tutor: 'Yo como pan y bebo agua. מעולה!' },
+            { type: 'choice', quest: 'איך אומרים "אדום"?', target: 'rojo', options: [{ id: 'rojo', icon: '🔴', label: 'Rojo' }, { id: 'azul', icon: '🔵', label: 'Azul' }, { id: 'verde', icon: '🟢', label: 'Verde' }], tutor: 'Rojo.' },
             { type: 'choice', quest: 'איך אומרים "כחול"?', target: 'azul', options: [{ id: 'verde', icon: '🟢', label: 'Verde' }, { id: 'azul', icon: '🔵', label: 'Azul' }, { id: 'amarillo', icon: '🟡', label: 'Amarillo' }], tutor: 'Azul.' },
             { type: 'choice', quest: 'איך אומרים "ירוק"?', target: 'verde', options: [{ id: 'blanco', icon: '⚪', label: 'Blanco' }, { id: 'rojo', icon: '🔴', label: 'Rojo' }, { id: 'verde', icon: '🟢', label: 'Verde' }], tutor: 'Verde.' },
-            { type: 'choice', quest: 'איך אומרים "צהוב"?', target: 'amarillo', options: [{ id: 'amarillo', icon: '🟡', label: 'Amarillo' }, { id: 'negro', icon: '⚫', label: 'Negro' }, { id: 'azul', icon: '🔵', label: 'Azul' }], tutor: 'Amarillo (אמריו).' },
-            { type: 'text', quest: 'איך אומרים "תפוח אדום"? (Manzana roja)', target: 'manzana roja', tutor: 'Manzana roja (שם התואר בא אחרי השם).' },
+            { type: 'choice', quest: 'איך אומרים "צהוב"?', target: 'amarillo', options: [{ id: 'amarillo', icon: '🟡', label: 'Amarillo' }, { id: 'negro', icon: '⚫', label: 'Negro' }, { id: 'azul', icon: '🔵', label: 'Azul' }], tutor: 'Amarillo.' },
+            { type: 'text', quest: 'איך אומרים "תפוח אדום"? (Manzana roja)', target: 'manzana roja', tutor: 'Manzana roja.' },
             { type: 'text', quest: 'איך אומרים "חתול שחור"? (Gato negro)', target: 'gato negro', tutor: 'Gato negro.' },
-
-            // יחידה 8: מספרים 1-5
             { type: 'choice', quest: 'איך אומרים 1 (אחד)?', target: 'uno', options: [{ id: 'dos', icon: '2️⃣', label: 'Dos' }, { id: 'uno', icon: '1️⃣', label: 'Uno' }, { id: 'tres', icon: '3️⃣', label: 'Tres' }], tutor: 'Uno.' },
             { type: 'choice', quest: 'איך אומרים 2 (שתיים)?', target: 'dos', options: [{ id: 'tres', icon: '3️⃣', label: 'Tres' }, { id: 'uno', icon: '1️⃣', label: 'Uno' }, { id: 'dos', icon: '2️⃣', label: 'Dos' }], tutor: 'Dos.' },
             { type: 'choice', quest: 'איך אומרים 3 (שלוש)?', target: 'tres', options: [{ id: 'tres', icon: '3️⃣', label: 'Tres' }, { id: 'cuatro', icon: '4️⃣', label: 'Cuatro' }, { id: 'cinco', icon: '5️⃣', label: 'Cinco' }], tutor: 'Tres.' },
-            { type: 'text', quest: 'איך אומרים 4? (Cuatro)', target: 'cuatro', tutor: 'Cuatro (קואטרו).' },
-            { type: 'text', quest: 'איך אומרים 5? (Cinco)', target: 'cinco', tutor: 'Cinco (סינקו).' },
+            { type: 'text', quest: 'איך אומרים 4? (Cuatro)', target: 'cuatro', tutor: 'Cuatro.' },
+            { type: 'text', quest: 'איך אומרים 5? (Cinco)', target: 'cinco', tutor: 'Cinco.' },
             { type: 'text', quest: 'איך אומרים "שני כלבים"?', target: 'dos perros', tutor: 'Dos perros.' },
             { type: 'text', quest: 'איך אומרים "שלושה תפוחים"?', target: 'tres manzanas', tutor: 'Tres manzanas.' },
-
-            // יחידה 9: שאלות וטיולים
             { type: 'choice', quest: 'איך אומרים "שירותים"?', target: 'bano', options: [{ id: 'hotel', icon: '🏨', label: 'Hotel' }, { id: 'bano', icon: '🚽', label: 'Baño' }, { id: 'casa', icon: '🏠', label: 'Casa' }], tutor: 'El baño.' },
             { type: 'text', quest: 'איפה = Dónde. איך אומרים "איפה"?', target: 'donde', tutor: 'Dónde.' },
             { type: 'text', quest: 'איך שואלים "איפה השירותים?" (Dónde está el baño)', target: 'donde esta el bano', tutor: '¿Dónde está el baño?' },
-            { type: 'choice', quest: 'איך אומרים "מלון"?', target: 'hotel', options: [{ id: 'aeropuerto', icon: '✈️', label: 'Aeropuerto' }, { id: 'hotel', icon: '🏨', label: 'Hotel' }, { id: 'restaurante', icon: '🍽️', label: 'Restaurante' }], tutor: 'El hotel (ה-H שותקת).' },
+            { type: 'choice', quest: 'איך אומרים "מלון"?', target: 'hotel', options: [{ id: 'aeropuerto', icon: '✈️', label: 'Aeropuerto' }, { id: 'hotel', icon: '🏨', label: 'Hotel' }, { id: 'restaurante', icon: '🍽️', label: 'Restaurante' }], tutor: 'El hotel.' },
             { type: 'text', quest: 'איך שואלים "איפה המלון?"', target: 'donde esta el hotel', tutor: '¿Dónde está el hotel?' },
             { type: 'text', quest: 'כמה זה עולה = Cuánto cuesta. איך אומרים "כמה זה עולה?"', target: 'cuanto cuesta', tutor: '¿Cuánto cuesta?' },
-
-            // יחידה 10: משפטים מתקדמים (מבחן מסכם)
             { type: 'text', quest: 'תרגמי: "שלום אמא"', target: 'hola madre', tutor: 'Hola madre.' },
-            { type: 'text', quest: 'תרגמי: "אני רוצה לשתות מים" (Yo quiero beber agua)', target: 'yo quiero beber agua', tutor: 'Yo quiero beber agua.' },
-            { type: 'text', quest: 'תרגמי: "כן, תודה רבה" (Sí, muchas gracias)', target: 'si muchas gracias', tutor: 'Sí, muchas gracias.' },
-            { type: 'text', quest: 'תרגמי: "אני אוכל לחם לבן" (Blanco = לבן)', target: 'yo como pan blanco', tutor: 'Yo como pan blanco.' },
+            { type: 'text', quest: 'תרגמי: "אני רוצה לשתות מים"', target: 'yo quiero beber agua', tutor: 'Yo quiero beber agua.' },
+            { type: 'text', quest: 'תרגמי: "כן, תודה רבה"', target: 'si muchas gracias', tutor: 'Sí, muchas gracias.' },
+            { type: 'text', quest: 'תרגמי: "אני אוכל לחם לבן"', target: 'yo como pan blanco', tutor: 'Yo como pan blanco.' },
             { type: 'text', quest: 'תרגמי: "איפה הכלב?"', target: 'donde esta el perro', tutor: '¿Dónde está el perro?' },
             { type: 'text', quest: 'השאלה האחרונה! תרגמי: "תודה ולהתראות"', target: 'gracias y adios', tutor: '¡Gracias y adiós! את אלופה!' }
         ];
@@ -134,7 +114,7 @@
         }
 
         function resetProgress() {
-            if(confirm("בטוחה שאת רוצה למחוק 60 שלבים ולהתחיל מאפס?")) {
+            if(confirm("בטוחה שאת רוצה למחוק הכל ולהתחיל מאפס?")) {
                 localStorage.removeItem('lingo_mega_step');
                 localStorage.removeItem('lingo_mega_xp');
                 location.reload();
@@ -149,7 +129,7 @@
             container.classList.add('fade-in');
 
             if (currentStep >= lessons.length) {
-                document.getElementById('questionText').innerText = "לא יאומן! סיימת את כל ה-60 שלבים! 🏆👑";
+                document.getElementById('questionText').innerText = "לא יאומן! סיימת את כל השלבים! 🏆👑";
                 document.getElementById('interactiveArea').innerHTML = `
                     <div class="text-center mb-6 text-gray-600 font-bold">צברת ${xp} נקודות ניסיון! את מוכנה לטוס לספרד!</div>
                     <button onclick="resetProgress()" class="w-full text-blue-500 font-bold py-4 rounded-xl border-2 border-blue-200 hover:bg-blue-50">
@@ -190,7 +170,6 @@
 
         function checkTextAnswer() {
             const input = document.getElementById('userInput');
-            // מנקה את התשובה מסימני פיסוק, רווחים מיותרים ואותיות גדולות
             const answer = input.value.toLowerCase().replace(/[¿?¡!.,]/g, '').trim();
             const target = lessons[currentStep].target.toLowerCase().replace(/[¿?¡!.,]/g, '').trim();
             
@@ -217,7 +196,7 @@
             document.getElementById('tutorMessage').innerText = lessons[currentStep].tutor;
             document.getElementById('feedbackFooter').classList.remove('hidden', 'translate-y-full');
             xp += 20;
-            document.getElementById('xpCount').innerText = `${xp} XP ⚡`;
+            document.getElementById('xpCount').innerText = xp + " XP ⚡";
         }
 
         function advanceLesson() {
@@ -228,10 +207,10 @@
         }
 
         function updateUI() {
-            document.getElementById('xpCount').innerText = `${xp} XP ⚡`;
+            document.getElementById('xpCount').innerText = xp + " XP ⚡";
             const displayLvl = currentStep < lessons.length ? currentStep + 1 : lessons.length;
-            document.getElementById('levelIndicator').innerText = `שלב ${displayLvl}/${lessons.length}`;
-            document.getElementById('progressBar').style.width = `${(currentStep / lessons.length) * 100}%`;
+            document.getElementById('levelIndicator').innerText = "שלב " + displayLvl + "/" + lessons.length;
+            document.getElementById('progressBar').style.width = (currentStep / lessons.length) * 100 + "%";
         }
 
         window.onload = renderLesson;
