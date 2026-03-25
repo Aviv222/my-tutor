@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מתנה!</title>
+    <title>LingoStep - 60 שלבים!</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .duo-green { background-color: #58cc02; }
         .duo-blue { background-color: #1cb0f6; }
+        .duo-red { background-color: #ff4b4b; }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -16,9 +17,9 @@
 
     <header class="p-4 flex flex-col gap-2 items-center bg-white sticky top-0 z-10 w-full max-w-2xl mx-auto mt-4 shadow-sm rounded-b-2xl">
         <div class="flex justify-between w-full items-center">
-            <button onclick="resetProgress()" class="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors">🗑️ איפוס קורס</button>
-            <span id="levelIndicator" class="text-sm font-bold text-gray-500">טוען...</span>
-            <span id="xpCount" class="text-sm font-bold text-orange-400">0 XP ⚡</span>
+            <button onclick="resetProgress()" class="text-[10px] text-gray-400 hover:text-red-500 font-bold transition-colors">🗑️ איפוס הכל</button>
+            <span id="levelIndicator" class="text-sm font-bold text-gray-500 font-mono">טוען...</span>
+            <span id="xpCount" class="text-sm font-bold text-orange-400 font-mono text-left">0 XP ⚡</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-4">
             <div id="progressBar" class="duo-green h-4 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
@@ -26,190 +27,225 @@
     </header>
 
     <main class="flex-1 flex flex-col justify-center items-center p-6 max-w-2xl mx-auto w-full fade-in" id="mainContainer">
-        <h2 id="questionText" class="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-8"></h2>
+        <h2 id="questionText" class="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-8 leading-relaxed"></h2>
         <div id="interactiveArea" class="w-full max-w-md"></div>
     </main>
 
-    <footer id="feedbackFooter" class="fixed bottom-0 left-0 w-full p-6 duo-green text-white hidden transform transition-transform translate-y-full z-20">
+    <footer id="feedbackFooter" class="fixed bottom-0 left-0 w-full p-6 duo-green text-white hidden transform transition-transform translate-y-full z-20 transition-all duration-300">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <div class="flex flex-col gap-1">
-                <h3 class="font-bold text-2xl">מצוין! 🎉</h3>
+                <h3 id="feedbackTitle" class="font-bold text-2xl">מצוין! 🎉</h3>
                 <p id="tutorMessage" class="text-sm md:text-base opacity-90"></p>
             </div>
-            <button onclick="advanceLesson()" class="bg-white text-[#58cc02] font-bold px-8 py-3 rounded-xl shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none text-lg">
+            <button id="continueBtn" onclick="advanceOrRetry()" class="bg-white font-bold px-8 py-3 rounded-xl shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none text-lg">
                 המשך
             </button>
         </div>
     </footer>
 
     <script>
-        let currentStep = parseInt(localStorage.getItem('lingo_mega_step')) || 0;
-        let xp = parseInt(localStorage.getItem('lingo_mega_xp')) || 0;
+        let currentStep = parseInt(localStorage.getItem('lingo_v6_step')) || 0;
+        let xp = parseInt(localStorage.getItem('lingo_v6_xp')) || 0;
+        let isCurrentCorrect = false;
 
         const lessons = [
-            { type: 'text', quest: 'איך אומרים "שלום"?', target: 'hola', tutor: '¡Hola! (ה-H שותקת)' },
-            { type: 'text', quest: 'איך אומרים "תודה"?', target: 'gracias', tutor: '¡Gracias!' },
-            { type: 'text', quest: 'איך אומרים "בבקשה"? (Por favor)', target: 'por favor', tutor: 'Por favor.' },
-            { type: 'text', quest: 'איך אומרים "כן"? (Sí)', target: 'si', tutor: 'Sí.' },
-            { type: 'text', quest: 'איך אומרים "לא"? (No)', target: 'no', tutor: 'No.' },
-            { type: 'text', quest: 'איך אומרים "להתראות"? (Adiós)', target: 'adios', tutor: '¡Adiós!' },
-            { type: 'text', quest: 'איך אומרים "בוקר טוב"? (Buenos días)', target: 'buenos dias', tutor: 'Buenos días.' },
-            { type: 'text', quest: 'איך אומרים "לילה טוב"? (Buenas noches)', target: 'buenas noches', tutor: 'Buenas noches.' },
-            { type: 'choice', quest: 'איך אומרים "כלב"?', target: 'perro', options: [{ id: 'gato', icon: '🐱', label: 'Gato' }, { id: 'perro', icon: '🐶', label: 'Perro' }, { id: 'pajaro', icon: '🐦', label: 'Pájaro' }], tutor: 'El perro.' },
-            { type: 'choice', quest: 'איך אומרים "חתול"?', target: 'gato', options: [{ id: 'gato', icon: '🐱', label: 'Gato' }, { id: 'vaca', icon: '🐄', label: 'Vaca' }, { id: 'caballo', icon: '🐴', label: 'Caballo' }], tutor: 'El gato.' },
-            { type: 'choice', quest: 'איך אומרים "פרה"?', target: 'vaca', options: [{ id: 'pez', icon: '🐟', label: 'Pez' }, { id: 'vaca', icon: '🐄', label: 'Vaca' }, { id: 'perro', icon: '🐶', label: 'Perro' }], tutor: 'La vaca.' },
-            { type: 'choice', quest: 'איך אומרים "סוס"?', target: 'caballo', options: [{ id: 'caballo', icon: '🐴', label: 'Caballo' }, { id: 'pajaro', icon: '🐦', label: 'Pájaro' }, { id: 'gato', icon: '🐱', label: 'Gato' }], tutor: "El caballo (ה-LL נשמעת כמו י)." },
-            { type: 'choice', quest: 'איך אומרים "ילד"?', target: 'nino', options: [{ id: 'nino', icon: '👦', label: 'Niño' }, { id: 'nina', icon: '👧', label: 'Niña' }, { id: 'mujer', icon: '👩', label: 'Mujer' }], tutor: 'El niño.' },
-            { type: 'choice', quest: 'איך אומרים "ילדה"?', target: 'nina', options: [{ id: 'hombre', icon: '👨', label: 'Hombre' }, { id: 'nina', icon: '👧', label: 'Niña' }, { id: 'nino', icon: '👦', label: 'Niño' }], tutor: 'La niña.' },
-            { type: 'choice', quest: 'איך אומרים "אישה"?', target: 'mujer', options: [{ id: 'mujer', icon: '👩', label: 'Mujer' }, { id: 'hombre', icon: '👨', label: 'Hombre' }, { id: 'nino', icon: '👦', label: 'Niño' }], tutor: 'La mujer.' },
-            { type: 'choice', quest: 'איך אומרים "גבר"?', target: 'hombre', options: [{ id: 'nina', icon: '👧', label: 'Niña' }, { id: 'mujer', icon: '👩', label: 'Mujer' }, { id: 'hombre', icon: '👨', label: 'Hombre' }], tutor: 'El hombre.' },
-            { type: 'text', quest: 'איך אומרים "אמא"? (Madre)', target: 'madre', tutor: 'La madre.' },
-            { type: 'text', quest: 'איך אומרים "אבא"? (Padre)', target: 'padre', tutor: 'El padre.' },
-            { type: 'choice', quest: 'איך אומרים "מים"?', target: 'agua', options: [{ id: 'leche', icon: '🥛', label: 'Leche' }, { id: 'agua', icon: '💧', label: 'Agua' }, { id: 'cafe', icon: '☕', label: 'Café' }], tutor: 'El agua.' },
-            { type: 'choice', quest: 'איך אומרים "לחם"?', target: 'pan', options: [{ id: 'pan', icon: '🍞', label: 'Pan' }, { id: 'queso', icon: '🧀', label: 'Queso' }, { id: 'carne', icon: '🥩', label: 'Carne' }], tutor: 'El pan.' },
-            { type: 'choice', quest: 'איך אומרים "תפוח"?', target: 'manzana', options: [{ id: 'banana', icon: '🍌', label: 'Banana' }, { id: 'manzana', icon: '🍎', label: 'Manzana' }, { id: 'uva', icon: '🍇', label: 'Uva' }], tutor: 'La manzana.' },
-            { type: 'choice', quest: 'איך אומרים "חלב"?', target: 'leche', options: [{ id: 'agua', icon: '💧', label: 'Agua' }, { id: 'leche', icon: '🥛', label: 'Leche' }, { id: 'cafe', icon: '☕', label: 'Café' }], tutor: 'La leche.' },
-            { type: 'choice', quest: 'איך אומרים "קפה"?', target: 'cafe', options: [{ id: 'cafe', icon: '☕', label: 'Café' }, { id: 'te', icon: '🍵', label: 'Té' }, { id: 'agua', icon: '💧', label: 'Agua' }], tutor: 'El café.' },
-            { type: 'text', quest: 'אני (Yo). איך אומרים "אני"?', target: 'yo', tutor: 'Yo.' },
-            { type: 'text', quest: 'רוצה (Quiero). איך אומרים "רוצה"?', target: 'quiero', tutor: 'Quiero.' },
-            { type: 'text', quest: 'איך אומרים "אני רוצה"?', target: 'yo quiero', tutor: 'Yo quiero.' },
-            { type: 'text', quest: 'איך אומרים "אני רוצה מים"?', target: 'yo quiero agua', tutor: 'Yo quiero agua.' },
-            { type: 'text', quest: 'איך אומרים "אני רוצה קפה"?', target: 'yo quiero cafe', tutor: 'Yo quiero café.' },
-            { type: 'text', quest: 'אוכל (Como). איך אומרים "אני אוכל"?', target: 'yo como', tutor: 'Yo como.' },
-            { type: 'text', quest: 'איך אומרים "אני אוכל לחם"?', target: 'yo como pan', tutor: 'Yo como pan.' },
-            { type: 'text', quest: 'איך אומרים "אני אוכל תפוח"?', target: 'yo como manzana', tutor: 'Yo como manzana.' },
-            { type: 'text', quest: 'שותה (Bebo). איך אומרים "אני שותה"?', target: 'yo bebo', tutor: 'Yo bebo.' },
-            { type: 'text', quest: 'איך אומרים "אני שותה חלב"?', target: 'yo bebo leche', tutor: 'Yo bebo leche.' },
-            { type: 'text', quest: 'שלב משולב: "אני אוכל לחם ושותה מים"', target: 'yo como pan y bebo agua', tutor: 'Yo como pan y bebo agua. מעולה!' },
-            { type: 'choice', quest: 'איך אומרים "אדום"?', target: 'rojo', options: [{ id: 'rojo', icon: '🔴', label: 'Rojo' }, { id: 'azul', icon: '🔵', label: 'Azul' }, { id: 'verde', icon: '🟢', label: 'Verde' }], tutor: 'Rojo.' },
-            { type: 'choice', quest: 'איך אומרים "כחול"?', target: 'azul', options: [{ id: 'verde', icon: '🟢', label: 'Verde' }, { id: 'azul', icon: '🔵', label: 'Azul' }, { id: 'amarillo', icon: '🟡', label: 'Amarillo' }], tutor: 'Azul.' },
-            { type: 'choice', quest: 'איך אומרים "ירוק"?', target: 'verde', options: [{ id: 'blanco', icon: '⚪', label: 'Blanco' }, { id: 'rojo', icon: '🔴', label: 'Rojo' }, { id: 'verde', icon: '🟢', label: 'Verde' }], tutor: 'Verde.' },
-            { type: 'choice', quest: 'איך אומרים "צהוב"?', target: 'amarillo', options: [{ id: 'amarillo', icon: '🟡', label: 'Amarillo' }, { id: 'negro', icon: '⚫', label: 'Negro' }, { id: 'azul', icon: '🔵', label: 'Azul' }], tutor: 'Amarillo.' },
-            { type: 'text', quest: 'איך אומרים "תפוח אדום"? (Manzana roja)', target: 'manzana roja', tutor: 'Manzana roja.' },
-            { type: 'text', quest: 'איך אומרים "חתול שחור"? (Gato negro)', target: 'gato negro', tutor: 'Gato negro.' },
-            { type: 'choice', quest: 'איך אומרים 1 (אחד)?', target: 'uno', options: [{ id: 'dos', icon: '2️⃣', label: 'Dos' }, { id: 'uno', icon: '1️⃣', label: 'Uno' }, { id: 'tres', icon: '3️⃣', label: 'Tres' }], tutor: 'Uno.' },
-            { type: 'choice', quest: 'איך אומרים 2 (שתיים)?', target: 'dos', options: [{ id: 'tres', icon: '3️⃣', label: 'Tres' }, { id: 'uno', icon: '1️⃣', label: 'Uno' }, { id: 'dos', icon: '2️⃣', label: 'Dos' }], tutor: 'Dos.' },
-            { type: 'choice', quest: 'איך אומרים 3 (שלוש)?', target: 'tres', options: [{ id: 'tres', icon: '3️⃣', label: 'Tres' }, { id: 'cuatro', icon: '4️⃣', label: 'Cuatro' }, { id: 'cinco', icon: '5️⃣', label: 'Cinco' }], tutor: 'Tres.' },
-            { type: 'text', quest: 'איך אומרים 4? (Cuatro)', target: 'cuatro', tutor: 'Cuatro.' },
-            { type: 'text', quest: 'איך אומרים 5? (Cinco)', target: 'cinco', tutor: 'Cinco.' },
-            { type: 'text', quest: 'איך אומרים "שני כלבים"?', target: 'dos perros', tutor: 'Dos perros.' },
-            { type: 'text', quest: 'איך אומרים "שלושה תפוחים"?', target: 'tres manzanas', tutor: 'Tres manzanas.' },
-            { type: 'choice', quest: 'איך אומרים "שירותים"?', target: 'bano', options: [{ id: 'hotel', icon: '🏨', label: 'Hotel' }, { id: 'bano', icon: '🚽', label: 'Baño' }, { id: 'casa', icon: '🏠', label: 'Casa' }], tutor: 'El baño.' },
-            { type: 'text', quest: 'איפה = Dónde. איך אומרים "איפה"?', target: 'donde', tutor: 'Dónde.' },
-            { type: 'text', quest: 'איך שואלים "איפה השירותים?" (Dónde está el baño)', target: 'donde esta el bano', tutor: '¿Dónde está el baño?' },
-            { type: 'choice', quest: 'איך אומרים "מלון"?', target: 'hotel', options: [{ id: 'aeropuerto', icon: '✈️', label: 'Aeropuerto' }, { id: 'hotel', icon: '🏨', label: 'Hotel' }, { id: 'restaurante', icon: '🍽️', label: 'Restaurante' }], tutor: 'El hotel.' },
-            { type: 'text', quest: 'איך שואלים "איפה המלון?"', target: 'donde esta el hotel', tutor: '¿Dónde está el hotel?' },
-            { type: 'text', quest: 'כמה זה עולה = Cuánto cuesta. איך אומרים "כמה זה עולה?"', target: 'cuanto cuesta', tutor: '¿Cuánto cuesta?' },
-            { type: 'text', quest: 'תרגמי: "שלום אמא"', target: 'hola madre', tutor: 'Hola madre.' },
-            { type: 'text', quest: 'תרגמי: "אני רוצה לשתות מים"', target: 'yo quiero beber agua', tutor: 'Yo quiero beber agua.' },
-            { type: 'text', quest: 'תרגמי: "כן, תודה רבה"', target: 'si muchas gracias', tutor: 'Sí, muchas gracias.' },
-            { type: 'text', quest: 'תרגמי: "אני אוכל לחם לבן"', target: 'yo como pan blanco', tutor: 'Yo como pan blanco.' },
-            { type: 'text', quest: 'תרגמי: "איפה הכלב?"', target: 'donde esta el perro', tutor: '¿Dónde está el perro?' },
-            { type: 'text', quest: 'השאלה האחרונה! תרגמי: "תודה ולהתראות"', target: 'gracias y adios', tutor: '¡Gracias y adiós! את אלופה!' }
+            // --- יחידה 1: חיות ---
+            { type: 'choice', quest: 'איך אומרים "כלב"?', target: 'perro', options: [{ id:'pajaro', icon:'🐦', label:'Pájaro' }, { id:'perro', icon:'🐶', label:'Perro' }, { id:'gato', icon:'🐱', label:'Gato' }], tutor: 'Perro (כלב).' },
+            { type: 'choice', quest: 'איך אומרים "חתול"?', target: 'gato', options: [{ id:'vaca', icon:'🐄', label:'Vaca' }, { id:'gato', icon:'🐱', label:'Gato' }, { id:'caballo', icon:'🐴', label:'Caballo' }], tutor: 'Gato (חתול).' },
+            { type: 'choice', quest: 'איך אומרים "ציפור"?', target: 'pajaro', options: [{ id:'pajaro', icon:'🐦', label:'Pájaro' }, { id:'perro', icon:'🐶', label:'Perro' }, { id:'vaca', icon:'🐄', label:'Vaca' }], tutor: 'Pájaro (ציפור).' },
+            { type: 'choice', quest: 'איך אומרים "סוס"?', target: 'caballo', options: [{ id:'caballo', icon:'🐴', label:'Caballo' }, { id:'gato', icon:'🐱', label:'Gato' }, { id:'pajaro', icon:'🐦', label:'Pájaro' }], tutor: 'Caballo (סוס).' },
+            { type: 'choice', quest: 'איך אומרים "פרה"?', target: 'vaca', options: [{ id:'perro', icon:'🐶', label:'Perro' }, { id:'vaca', icon:'🐄', label:'Vaca' }, { id:'caballo', icon:'🐴', label:'Caballo' }], tutor: 'Vaca (פרה).' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "כלב"', target: 'perro', tutor: 'Perro 🐶' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "חתול"', target: 'gato', tutor: 'Gato 🐱' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "ציפור"', target: 'pajaro', tutor: 'Pájaro 🐦' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "סוס"', target: 'caballo', tutor: 'Caballo 🐴' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "פרה"', target: 'vaca', tutor: 'Vaca 🐄' },
+
+            // --- יחידה 2: אוכל ---
+            { type: 'choice', quest: 'איך אומרים "מים"?', target: 'agua', options: [{ id:'leche', icon:'🥛', label:'Leche' }, { id:'agua', icon:'💧', label:'Agua' }, { id:'cafe', icon:'☕', label:'Café' }], tutor: 'Agua (מים).' },
+            { type: 'choice', quest: 'איך אומרים "לחם"?', target: 'pan', options: [{ id:'pan', icon:'🍞', label:'Pan' }, { id:'queso', icon:'🧀', label:'Queso' }, { id:'carne', icon:'🥩', label:'Carne' }], tutor: 'Pan (לחם).' },
+            { type: 'choice', quest: 'איך אומרים "תפוח"?', target: 'manzana', options: [{ id:'banana', icon:'🍌', label:'Banana' }, { id:'manzana', icon:'🍎', label:'Manzana' }, { id:'uva', icon:'🍇', label:'Uva' }], tutor: 'Manzana (תפוח).' },
+            { type: 'choice', quest: 'איך אומרים "חלב"?', target: 'leche', options: [{ id:'agua', icon:'💧', label:'Agua' }, { id:'leche', icon:'🥛', label:'Leche' }, { id:'cafe', icon:'☕', label:'Café' }], tutor: 'Leche (חלב).' },
+            { type: 'choice', quest: 'איך אומרים "קפה"?', target: 'cafe', options: [{ id:'cafe', icon:'☕', label:'Café' }, { id:'pan', icon:'🍞', label:'Pan' }, { id:'agua', icon:'💧', label:'Agua' }], tutor: 'Café (קפה).' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "מים"', target: 'agua', tutor: 'Agua 💧' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "לחם"', target: 'pan', tutor: 'Pan 🍞' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "תפוח"', target: 'manzana', tutor: 'Manzana 🍎' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "חלב"', target: 'leche', tutor: 'Leche 🥛' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "קפה"', target: 'cafe', tutor: 'Café ☕' },
+
+            // --- יחידה 3: צבעים ---
+            { type: 'choice', quest: 'איך אומרים "אדום"?', target: 'rojo', options: [{ id:'rojo', icon:'🔴', label:'Rojo' }, { id:'azul', icon:'🔵', label:'Azul' }, { id:'verde', icon:'🟢', label:'Verde' }], tutor: 'Rojo.' },
+            { type: 'choice', quest: 'איך אומרים "כחול"?', target: 'azul', options: [{ id:'verde', icon:'🟢', label:'Verde' }, { id:'azul', icon:'🔵', label:'Azul' }, { id:'amarillo', icon:'🟡', label:'Amarillo' }], tutor: 'Azul.' },
+            { type: 'choice', quest: 'איך אומרים "ירוק"?', target: 'verde', options: [{ id:'blanco', icon:'⚪', label:'Blanco' }, { id:'rojo', icon:'🔴', label:'Rojo' }, { id:'verde', icon:'🟢', label:'Verde' }], tutor: 'Verde.' },
+            { type: 'choice', quest: 'איך אומרים "צהוב"?', target: 'amarillo', options: [{ id:'amarillo', icon:'🟡', label:'Amarillo' }, { id:'negro', icon:'⚫', label:'Negro' }, { id:'azul', icon:'🔵', label:'Azul' }], tutor: 'Amarillo.' },
+            { type: 'choice', quest: 'איך אומרים "שחור"?', target: 'negro', options: [{ id:'blanco', icon:'⚪', label:'Blanco' }, { id:'negro', icon:'⚫', label:'Negro' }, { id:'rojo', icon:'🔴', label:'Rojo' }], tutor: 'Negro.' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "אדום"', target: 'rojo', tutor: 'Rojo 🔴' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "כחול"', target: 'azul', tutor: 'Azul 🔵' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "ירוק"', target: 'verde', tutor: 'Verde 🟢' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "צהוב"', target: 'amarillo', tutor: 'Amarillo 🟡' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "שחור"', target: 'negro', tutor: 'Negro ⚫' },
+
+            // --- יחידה 4: מספרים ---
+            { type: 'choice', quest: 'איך אומרים 1?', target: 'uno', options: [{ id:'dos', icon:'2️⃣', label:'Dos' }, { id:'uno', icon:'1️⃣', label:'Uno' }, { id:'tres', icon:'3️⃣', label:'Tres' }], tutor: 'Uno.' },
+            { type: 'choice', quest: 'איך אומרים 2?', target: 'dos', options: [{ id:'tres', icon:'3️⃣', label:'Tres' }, { id:'uno', icon:'1️⃣', label:'Uno' }, { id:'dos', icon:'2️⃣', label:'Dos' }], tutor: 'Dos.' },
+            { type: 'choice', quest: 'איך אומרים 3?', target: 'tres', options: [{ id:'tres', icon:'3️⃣', label:'Tres' }, { id:'cuatro', icon:'4️⃣', label:'Cuatro' }, { id:'cinco', icon:'5️⃣', label:'Cinco' }], tutor: 'Tres.' },
+            { type: 'choice', quest: 'איך אומרים 4?', target: 'cuatro', options: [{ id:'dos', icon:'2️⃣', label:'Dos' }, { id:'cinco', icon:'5️⃣', label:'Cinco' }, { id:'cuatro', icon:'4️⃣', label:'Cuatro' }], tutor: 'Cuatro.' },
+            { type: 'choice', quest: 'איך אומרים 5?', target: 'cinco', options: [{ id:'cinco', icon:'5️⃣', label:'Cinco' }, { id:'uno', icon:'1️⃣', label:'Uno' }, { id:'tres', icon:'3️⃣', label:'Tres' }], tutor: 'Cinco.' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "אחד"', target: 'uno', tutor: 'Uno 1️⃣' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "שתיים"', target: 'dos', tutor: 'Dos 2️⃣' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "שלוש"', target: 'tres', tutor: 'Tres 3️⃣' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "ארבע"', target: 'cuatro', tutor: 'Cuatro 4️⃣' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "חמש"', target: 'cinco', tutor: 'Cinco 5️⃣' },
+
+            // --- יחידה 5: אנשים ומשפחה ---
+            { type: 'choice', quest: 'איך אומרים "ילד"?', target: 'nino', options: [{ id:'nino', icon:'👦', label:'Niño' }, { id:'nina', icon:'👧', label:'Niña' }, { id:'mujer', icon:'👩', label:'Mujer' }], tutor: 'Niño.' },
+            { type: 'choice', quest: 'איך אומרים "ילדה"?', target: 'nina', options: [{ id:'hombre', icon:'👨', label:'Hombre' }, { id:'nina', icon:'👧', label:'Niña' }, { id:'nino', icon:'👦', label:'Niño' }], tutor: 'Niña.' },
+            { type: 'choice', quest: 'איך אומרים "אישה"?', target: 'mujer', options: [{ id:'mujer', icon:'👩', label:'Mujer' }, { id:'hombre', icon:'👨', label:'Hombre' }, { id:'nino', icon:'👦', label:'Niño' }], tutor: 'Mujer.' },
+            { type: 'choice', quest: 'איך אומרים "גבר"?', target: 'hombre', options: [{ id:'nina', icon:'👧', label:'Niña' }, { id:'mujer', icon:'👩', label:'Mujer' }, { id:'hombre', icon:'👨', label:'Hombre' }], tutor: 'Hombre.' },
+            { type: 'choice', quest: 'איך אומרים "תינוק"?', target: 'bebe', options: [{ id:'bebe', icon:'👶', label:'Bebé' }, { id:'nino', icon:'👦', label:'Niño' }, { id:'hombre', icon:'👨', label:'Hombre' }], tutor: 'Bebé.' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "ילד"', target: 'nino', tutor: 'Niño 👦' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "ילדה"', target: 'nina', tutor: 'Niña 👧' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "אישה"', target: 'mujer', tutor: 'Mujer 👩' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "גבר"', target: 'hombre', tutor: 'Hombre 👨' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "תינוק"', target: 'bebe', tutor: 'Bebé 👶' },
+
+            // --- יחידה 6: מקומות וטיולים ---
+            { type: 'choice', quest: 'איך אומרים "שירותים"?', target: 'bano', options: [{ id:'hotel', icon:'🏨', label:'Hotel' }, { id:'bano', icon:'🚽', label:'Baño' }, { id:'casa', icon:'🏠', label:'Casa' }], tutor: 'Baño.' },
+            { type: 'choice', quest: 'איך אומרים "מלון"?', target: 'hotel', options: [{ id:'escuela', icon:'🏫', label:'Escuela' }, { id:'hotel', icon:'🏨', label:'Hotel' }, { id:'restaurante', icon:'🍽️', label:'Restaurante' }], tutor: 'Hotel.' },
+            { type: 'choice', quest: 'איך אומרים "בית"?', target: 'casa', options: [{ id:'casa', icon:'🏠', label:'Casa' }, { id:'bano', icon:'🚽', label:'Baño' }, { id:'coche', icon:'🚗', label:'Coche' }], tutor: 'Casa.' },
+            { type: 'choice', quest: 'איך אומרים "בית ספר"?', target: 'escuela', options: [{ id:'hotel', icon:'🏨', label:'Hotel' }, { id:'escuela', icon:'🏫', label:'Escuela' }, { id:'casa', icon:'🏠', label:'Casa' }], tutor: 'Escuela.' },
+            { type: 'choice', quest: 'איך אומרים "מכונית"?', target: 'coche', options: [{ id:'coche', icon:'🚗', label:'Coche' }, { id:'casa', icon:'🏠', label:'Casa' }, { id:'hotel', icon:'🏨', label:'Hotel' }], tutor: 'Coche.' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "שירותים"', target: 'bano', tutor: 'Baño 🚽' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "מלון"', target: 'hotel', tutor: 'Hotel 🏨' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "בית"', target: 'casa', tutor: 'Casa 🏠' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "בית ספר"', target: 'escuela', tutor: 'Escuela 🏫' },
+            { type: 'text', quest: '📝 מבחן כתיבה: "מכונית"', target: 'coche', tutor: 'Coche 🚗' }
         ];
 
         function saveData() {
-            localStorage.setItem('lingo_mega_step', currentStep);
-            localStorage.setItem('lingo_mega_xp', xp);
+            localStorage.setItem('lingo_v6_step', currentStep);
+            localStorage.setItem('lingo_v6_xp', xp);
         }
 
         function resetProgress() {
-            if(confirm("בטוחה שאת רוצה למחוק הכל ולהתחיל מאפס?")) {
-                localStorage.removeItem('lingo_mega_step');
-                localStorage.removeItem('lingo_mega_xp');
+            if(confirm("בטוחה שאת רוצה למחוק 60 שלבים ולהתחיל מהתחלה?")) {
+                localStorage.removeItem('lingo_v6_step');
+                localStorage.removeItem('lingo_v6_xp');
                 location.reload();
             }
         }
 
         function renderLesson() {
-            document.getElementById('feedbackFooter').classList.add('hidden', 'translate-y-full');
+            document.getElementById('feedbackFooter').classList.add('translate-y-full');
+            setTimeout(() => document.getElementById('feedbackFooter').classList.add('hidden'), 300);
+            
             const container = document.getElementById('mainContainer');
             container.classList.remove('fade-in');
             void container.offsetWidth; 
             container.classList.add('fade-in');
 
             if (currentStep >= lessons.length) {
-                document.getElementById('questionText').innerText = "לא יאומן! סיימת את כל השלבים! 🏆👑";
-                document.getElementById('interactiveArea').innerHTML = `
-                    <div class="text-center mb-6 text-gray-600 font-bold">צברת ${xp} נקודות ניסיון! את מוכנה לטוס לספרד!</div>
-                    <button onclick="resetProgress()" class="w-full text-blue-500 font-bold py-4 rounded-xl border-2 border-blue-200 hover:bg-blue-50">
-                        התחילי קורס חדש
-                    </button>`;
+                document.getElementById('questionText').innerText = "וואו! סיימת 60 שלבים! הקורס הושלם! 🏆🥇";
+                document.getElementById('interactiveArea').innerHTML = `<button onclick="resetProgress()" class="w-full duo-blue text-white font-bold py-4 rounded-xl shadow-[0_4px_0_#1899d6] text-xl">התחילי קורס חדש</button>`;
                 return;
             }
 
             const lesson = lessons[currentStep];
-            document.getElementById('questionText').innerText = lesson.quest;
+            
+            if(lesson.quest.includes("מבחן כתיבה")) {
+                document.getElementById('questionText').innerHTML = `<span class="text-purple-600">${lesson.quest}</span>`;
+            } else {
+                document.getElementById('questionText').innerText = lesson.quest;
+            }
+
             const area = document.getElementById('interactiveArea');
             
             if (lesson.type === 'text') {
                 area.innerHTML = `
                     <div class="flex flex-col gap-4">
-                        <input type="text" id="userInput" placeholder="הקלידי תשובה..." onkeydown="if(event.key==='Enter')checkTextAnswer()" 
-                            class="w-full p-4 text-xl border-2 border-gray-300 rounded-xl focus:border-[#1cb0f6] focus:bg-blue-50 outline-none text-center" dir="ltr" autocomplete="off">
-                        <button onclick="checkTextAnswer()" class="w-full duo-blue text-white font-bold px-8 py-4 rounded-xl shadow-[0_4px_0_#1899d6] active:translate-y-1 active:shadow-none text-xl">
+                        <input type="text" id="userInput" placeholder="הקלידי בספרדית..." onkeydown="if(event.key==='Enter')checkAnswer()" 
+                            class="w-full p-4 text-xl border-2 border-gray-300 rounded-xl focus:border-[#1cb0f6] focus:bg-blue-50 outline-none text-center font-bold" dir="ltr" autocomplete="off">
+                        <button onclick="checkAnswer()" class="w-full duo-blue text-white font-bold px-8 py-4 rounded-xl shadow-[0_4px_0_#1899d6] active:translate-y-1 active:shadow-none text-xl">
                             בדיקה
                         </button>
                     </div>`;
                 setTimeout(() => document.getElementById('userInput').focus(), 100);
             } 
             else if (lesson.type === 'choice') {
-                area.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        ${lesson.options.map(opt => `
-                            <button onclick="checkChoiceAnswer('${opt.id}')" 
-                                class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-2xl hover:bg-blue-50 hover:border-[#1cb0f6] active:bg-blue-100 shadow-sm transition-all">
-                                <span class="text-6xl mb-4">${opt.icon}</span>
-                                <span class="font-bold text-gray-700 text-xl">${opt.label}</span>
-                            </button>
-                        `).join('')}
-                    </div>`;
+                area.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    ${lesson.options.map(opt => `
+                        <button onclick="checkChoiceAnswer('${opt.id}')" 
+                            class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-2xl hover:bg-blue-50 hover:border-[#1cb0f6] active:bg-blue-100 shadow-sm transition-all group">
+                            <span class="text-6xl mb-4 group-hover:scale-110 transition-transform">${opt.icon}</span>
+                            <span class="font-bold text-gray-700 text-xl">${opt.label}</span>
+                        </button>
+                    `).join('')}
+                </div>`;
             }
             updateUI();
         }
 
-        function checkTextAnswer() {
+        function checkAnswer() {
             const input = document.getElementById('userInput');
             const answer = input.value.toLowerCase().replace(/[¿?¡!.,]/g, '').trim();
-            const target = lessons[currentStep].target.toLowerCase().replace(/[¿?¡!.,]/g, '').trim();
-            
+            const target = lessons[currentStep].target.toLowerCase();
             if (!answer) return;
-
-            if (answer.includes(target) || target.includes(answer)) {
-                showSuccess();
-            } else {
-                alert("אופס, טעות קטנה. נסי שוב!");
-                input.value = '';
-                input.focus();
-            }
+            showFeedback(answer === target, target);
         }
 
         function checkChoiceAnswer(id) {
-            if (id === lessons[currentStep].target) {
-                showSuccess();
+            const target = lessons[currentStep].target;
+            showFeedback(id === target, target);
+        }
+
+        function showFeedback(isCorrect, targetWord) {
+            isCurrentCorrect = isCorrect;
+            const footer = document.getElementById('feedbackFooter');
+            const title = document.getElementById('feedbackTitle');
+            const msg = document.getElementById('tutorMessage');
+            const btn = document.getElementById('continueBtn');
+            
+            footer.classList.remove('hidden');
+            setTimeout(() => footer.classList.remove('translate-y-full'), 10);
+            
+            if (isCorrect) {
+                footer.className = "fixed bottom-0 left-0 w-full p-6 text-white z-20 transition-all duration-300 duo-green";
+                btn.style.color = '#58cc02';
+                btn.innerText = "המשך";
+                title.innerText = "מצוין! 🎉";
+                msg.innerText = lessons[currentStep].tutor;
+                xp += 20;
+                document.getElementById('xpCount').innerText = xp + " XP ⚡";
             } else {
-                alert("לא מדויק... נסי תמונה אחרת!");
+                footer.className = "fixed bottom-0 left-0 w-full p-6 text-white z-20 transition-all duration-300 duo-red";
+                btn.style.color = '#ff4b4b';
+                btn.innerText = "הבנתי, אנסה שוב";
+                title.innerText = "לא בדיוק... 😕";
+                msg.innerText = "התשובה הנכונה היא: " + targetWord;
             }
         }
 
-        function showSuccess() {
-            document.getElementById('tutorMessage').innerText = lessons[currentStep].tutor;
-            document.getElementById('feedbackFooter').classList.remove('hidden', 'translate-y-full');
-            xp += 20;
-            document.getElementById('xpCount').innerText = xp + " XP ⚡";
-        }
-
-        function advanceLesson() {
-            currentStep++;
-            saveData();
-            updateUI();
-            renderLesson();
+        function advanceOrRetry() {
+            if (isCurrentCorrect) {
+                currentStep++;
+                saveData();
+                renderLesson();
+            } else {
+                document.getElementById('feedbackFooter').classList.add('translate-y-full');
+                setTimeout(() => document.getElementById('feedbackFooter').classList.add('hidden'), 300);
+                
+                const input = document.getElementById('userInput');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+            }
         }
 
         function updateUI() {
             document.getElementById('xpCount').innerText = xp + " XP ⚡";
             const displayLvl = currentStep < lessons.length ? currentStep + 1 : lessons.length;
-            document.getElementById('levelIndicator').innerText = "שלב " + displayLvl + "/" + lessons.length;
+            document.getElementById('levelIndicator').innerText = displayLvl + "/" + lessons.length;
             document.getElementById('progressBar').style.width = (currentStep / lessons.length) * 100 + "%";
         }
 
